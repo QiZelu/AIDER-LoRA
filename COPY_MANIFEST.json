@@ -1,0 +1,344 @@
+{
+  "experiment": "/hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_transformer_task_lora_r8_raw_clip_two_stage5_5_seed42",
+  "runtime_source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion",
+  "destination": "/hdd/u202511081000084/IMC_QZL/AIDER-LoRA",
+  "kind": "source_and_configuration_copy_no_relocation_edits",
+  "recorded_runtime_sources_verified": 49,
+  "copied_python_files": 50,
+  "copied_source_bytes": 297259,
+  "excluded": [
+    "weights",
+    "all_pt_and_pth_files",
+    "caches",
+    "cached_embeddings",
+    "videos",
+    "training_logs",
+    "training_results"
+  ],
+  "files": [
+    {
+      "path": "README.md",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/README.md",
+      "sha256": "da446781aef860ae10536db5b370d90a0f8dce34ffdb3774a2286ee76660eb99",
+      "bytes": 6379
+    },
+    {
+      "path": "config.yaml",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_transformer_task_lora_r8_raw_clip_two_stage5_5_seed42/config.yaml",
+      "sha256": "cb64be30cbd7edc62fe7c30d4fb5dd84b9fc748c412333ed70a47dc80451a53e",
+      "bytes": 8463
+    },
+    {
+      "path": "configs/med_config.json",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/configs/med_config.json",
+      "sha256": "d8b5029cc3c0124313d17009d043f0701bbe497f3721fa4ceb818720fe665326",
+      "bytes": 485
+    },
+    {
+      "path": "dataset/__init__.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/dataset/__init__.py",
+      "sha256": "fe8f77b7acb9adf5a2f573dff975d2aed8879ec28e30e37d1329dba5e6ce40b4",
+      "bytes": 197
+    },
+    {
+      "path": "dataset/artifact_features_v3.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/dataset/artifact_features_v3.py",
+      "sha256": "f2081dfec4c4c420ec1accf19bcf3b747862e5bfbcf57c31a434d9180598cde6",
+      "bytes": 4501
+    },
+    {
+      "path": "dataset/artifact_prior.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/dataset/artifact_prior.py",
+      "sha256": "9fcac89df04a781f30e15fbfd1c0449fa6049e7c734f495d435aa84a351f4116",
+      "bytes": 6113
+    },
+    {
+      "path": "dataset/frame_sampling.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/dataset/frame_sampling.py",
+      "sha256": "74f2d648b0e0da6c3b2ab7d62c8a6335c9e85cbe39eb3ef3549c80226baaed6c",
+      "bytes": 3073
+    },
+    {
+      "path": "dataset/joint.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/dataset/joint.py",
+      "sha256": "2943c5b2c8df59ce4e8048947b6c3f3d59de7cda96bc4cc595efcb95021f2c55",
+      "bytes": 1574
+    },
+    {
+      "path": "dataset/loader.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/dataset/loader.py",
+      "sha256": "f053c672066150c7e9b0d0ead62f6c4e1d1c43cf29e9ee37a6c757be31ad6ab9",
+      "bytes": 1795
+    },
+    {
+      "path": "dataset/video_dataset.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/dataset/video_dataset.py",
+      "sha256": "e91485f8f52726992967abd06457f6ed585bde9dabb34557212d7611e8f0ebb6",
+      "bytes": 8596
+    },
+    {
+      "path": "engine/__init__.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/engine/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "engine/audit.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/engine/audit.py",
+      "sha256": "14edb9b42ea24f0a3accc0f53bf1e614c1cbaad656a593118d0fb2be1aed6630",
+      "bytes": 1301
+    },
+    {
+      "path": "engine/checkpoint.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/engine/checkpoint.py",
+      "sha256": "26e865d48bdb8797dfbad9408a67d31d7bec5c10f23d4f8517f761a90a9db872",
+      "bytes": 4420
+    },
+    {
+      "path": "engine/diagnostics.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/engine/diagnostics.py",
+      "sha256": "378519f8df47af9ff76e8c8f9f61198be46f0b3472d54f7d2307f4b7f94d02de",
+      "bytes": 3220
+    },
+    {
+      "path": "engine/evaluation.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/engine/evaluation.py",
+      "sha256": "de23773e968bebd3f7f11a80745a8d6ec9137e06554f169b523507d12cb599ac",
+      "bytes": 6177
+    },
+    {
+      "path": "engine/gradients.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/engine/gradients.py",
+      "sha256": "225fe92381ad3800122bf94596a9ac77b8504f8939b2bbc68433df882ed40064",
+      "bytes": 2629
+    },
+    {
+      "path": "engine/io.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/engine/io.py",
+      "sha256": "4af4d24ff46ecea305fa583a0d69d0c5a78f63aef834d9422eb6d8fcc0b789a1",
+      "bytes": 660
+    },
+    {
+      "path": "engine/losses.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/engine/losses.py",
+      "sha256": "7cd132be97b790ec37a28fd2e8e756a907ebb1a0c79360b8ce7c901eb11c9c8d",
+      "bytes": 2175
+    },
+    {
+      "path": "engine/memory.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/engine/memory.py",
+      "sha256": "93dc314a7e281471805db4717d64d10cdd070ca4c50b27527eb9ee91a8a0fe96",
+      "bytes": 4097
+    },
+    {
+      "path": "engine/metrics.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/engine/metrics.py",
+      "sha256": "7600a4ff36824884cdab0a63415d62124de2dab629c32bd4511f26f79b35b7ea",
+      "bytes": 4642
+    },
+    {
+      "path": "engine/optim.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/engine/optim.py",
+      "sha256": "cb218ee25fdcd716e9660379ac64adaa212f4b8c42770aff70dfafcec65ae7bb",
+      "bytes": 6419
+    },
+    {
+      "path": "engine/preflight.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/engine/preflight.py",
+      "sha256": "791ac6c9302f4189c79ae2bbf71c0f4053bf22afd9adfc893f32339e634fb9f7",
+      "bytes": 11647
+    },
+    {
+      "path": "engine/runtime.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/engine/runtime.py",
+      "sha256": "d930af08350def92f3db3febf35006f0ea6ec9122f7521ec408608b2d15503ef",
+      "bytes": 717
+    },
+    {
+      "path": "engine/sampling.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/engine/sampling.py",
+      "sha256": "aaf53c3f2c6d69f08f12fbfba86d64e564c1216c62b3d5c2672159d2f0181f61",
+      "bytes": 2256
+    },
+    {
+      "path": "engine/trainer.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/engine/trainer.py",
+      "sha256": "dff18c6c2422e1e25d1bd947a24737efdc7b0a4e38e42cd410ec39ebf591f3ed",
+      "bytes": 20680
+    },
+    {
+      "path": "models/__init__.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/models/__init__.py",
+      "sha256": "d366d3662fcbb49531b00a69048d34a179c34e423960866c0329c97fa19a7a30",
+      "bytes": 860
+    },
+    {
+      "path": "models/aider.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/models/aider.py",
+      "sha256": "b7188302c44950d422fe963e970c699f0bf9edd2bd081d4b67168e7737fbbace",
+      "bytes": 15445
+    },
+    {
+      "path": "models/artifact_query.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/models/artifact_query.py",
+      "sha256": "6ff6e96ab02dff63a0b7eb790cbab3cffb11ee1cd11c5a671cc67ec24f3dd00b",
+      "bytes": 6111
+    },
+    {
+      "path": "models/backbones/__init__.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/models/backbones/__init__.py",
+      "sha256": "276c8b3bc545b22a8e676e82cbc177917a2d7a080c34360a03e9513c3efcbd45",
+      "bytes": 258
+    },
+    {
+      "path": "models/backbones/blip.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/models/backbones/blip.py",
+      "sha256": "d48aa8227faa651f03e1abef2368ae545bcf92ff55f4c01b1a9e7592dc8dfd0a",
+      "bytes": 7926
+    },
+    {
+      "path": "models/backbones/blip_legacy/__init__.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/models/backbones/blip_legacy/__init__.py",
+      "sha256": "3daf937092a9b4d1ba84c695c7f2e36a052f650fbcee17fbb164744b206b4ef7",
+      "bytes": 149
+    },
+    {
+      "path": "models/backbones/blip_legacy/blip.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/models/backbones/blip_legacy/blip.py",
+      "sha256": "682e3769f11f61c1d7b740314076bf69fa7def6443ca54a6118d5bc59c1539df",
+      "bytes": 1541
+    },
+    {
+      "path": "models/backbones/blip_legacy/blip_pretrain.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/models/backbones/blip_legacy/blip_pretrain.py",
+      "sha256": "770c42a52b192872835fda6b6cce480cebaac298a2f3f2da3a672e1a55177112",
+      "bytes": 652
+    },
+    {
+      "path": "models/backbones/blip_legacy/med.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/models/backbones/blip_legacy/med.py",
+      "sha256": "58d4cab32c83bfa07ff8130c3311bdce63976dcbb0992a4b692b5e2d5742cfe3",
+      "bytes": 42302
+    },
+    {
+      "path": "models/backbones/blip_legacy/vit.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/models/backbones/blip_legacy/vit.py",
+      "sha256": "e2c3d0796fb4752c93702e3fbde65019b35682db490e7acbbbc24a7cdb29b9c4",
+      "bytes": 14241
+    },
+    {
+      "path": "models/backbones/configuration_intern_vit.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/models/backbones/configuration_intern_vit.py",
+      "sha256": "22dd687a5f142985407675fc6b1dc688c2ded93e54192543ecf28ef495a6efa8",
+      "bytes": 5548
+    },
+    {
+      "path": "models/backbones/modeling_intern_vit.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/models/backbones/modeling_intern_vit.py",
+      "sha256": "d3e0f68f29e86be1f3e6e101dc45303ec24e5115e0034de101665972576eb348",
+      "bytes": 18099
+    },
+    {
+      "path": "models/backbones/slowfast.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/models/backbones/slowfast.py",
+      "sha256": "0de641dfe4fc8096dafd0af8c9c0131ba1d05f587c6d70cf44911969ebe9f864",
+      "bytes": 2488
+    },
+    {
+      "path": "models/backbones/vital.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/models/backbones/vital.py",
+      "sha256": "2b61ded6399f037c58f85283807ea3d04bc65b094472c5b9fcd1bfbe6f04d937",
+      "bytes": 3982
+    },
+    {
+      "path": "models/blip_temporal.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/models/blip_temporal.py",
+      "sha256": "110c3b037b22692fa05273ce749cfd5c40b59837c7853f5e0f49a98f2996b594",
+      "bytes": 1423
+    },
+    {
+      "path": "models/film.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/models/film.py",
+      "sha256": "2d60bd8103947c01424c86bf047896d8d44df222afb4c717c3fe652d6a38e876",
+      "bytes": 3658
+    },
+    {
+      "path": "models/fusion.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/models/fusion.py",
+      "sha256": "0a72428ddc1f674e317da75fe5276b35b81ef985657b3cd5a09a31e213620854",
+      "bytes": 4814
+    },
+    {
+      "path": "models/lora.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/models/lora.py",
+      "sha256": "02deb287d3209ec2d567c3d2bc94cd12eed2d6945b93e6275da746d2498acac1",
+      "bytes": 2698
+    },
+    {
+      "path": "models/registry.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/models/registry.py",
+      "sha256": "4c2162e85e7bcc1a642184928bf27a65f299cfc3f6f3cf447814cf73c7a4aadd",
+      "bytes": 745
+    },
+    {
+      "path": "models/task_private.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/models/task_private.py",
+      "sha256": "7b31af669787f3c0b8b38b104f7e2963059d0bc9c69dde436fc828b373825c68",
+      "bytes": 2196
+    },
+    {
+      "path": "requirements.txt",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/requirements.txt",
+      "sha256": "0e36f4fb1ddff84b826e1b05bb1863f78f31b9e17a0210d87500db6c4f6891ed",
+      "bytes": 124
+    },
+    {
+      "path": "scripts/train_task_lora.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/scripts/train_task_lora.py",
+      "sha256": "88ee6a0fbe3041f2d15552986151e9aa98714b5583133ca50ffebaafb5912236",
+      "bytes": 5745
+    },
+    {
+      "path": "tests/test_task_lora.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/tests/test_task_lora.py",
+      "sha256": "6a7300e4d8bea86a75210516e826c323f2cbab4246129eff5f5f01ad994497db",
+      "bytes": 16981
+    },
+    {
+      "path": "utils/__init__.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/utils/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "utils/config.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/utils/config.py",
+      "sha256": "56cdde1da0d959fc4798298b4f4d1e8926506e4981775a42e66e26165a06fe44",
+      "bytes": 2679
+    },
+    {
+      "path": "utils/experiment.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/utils/experiment.py",
+      "sha256": "f851c9f97920efcc142c5610669d62754f05b5f282c0b2d516e14db7f72e5946",
+      "bytes": 384
+    },
+    {
+      "path": "utils/initialization.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/utils/initialization.py",
+      "sha256": "2c6f96c3c0d7b96450f9a4070e8474148350d7bdf3a87924015939a7922e3765",
+      "bytes": 3717
+    },
+    {
+      "path": "utils/protocol.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/utils/protocol.py",
+      "sha256": "320d862ff9f6db2dda4f4fc76c4db4d0ca0b56f6c11f47991336e0fee1f0d541",
+      "bytes": 14257
+    },
+    {
+      "path": "utils/task_projection.py",
+      "source": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/utils/task_projection.py",
+      "sha256": "56b0bd09a84c32958c78fc456ddad7941a49d2b6a6b5c8ed84248a5b035a0997",
+      "bytes": 6020
+    }
+  ]
+}

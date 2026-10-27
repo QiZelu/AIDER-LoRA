@@ -1,0 +1,14 @@
+numpy
+opencv-python
+PyYAML
+torch
+torchvision
+pytorchvideo
+transformers
+safetensors
+timm
+einops
+fairscale
+fvcore
+iopath
+tqdm

@@ -1,0 +1,242 @@
+task:
+  order:
+  - static
+  - temporal
+  - dynamic
+  - text_video
+  descriptions:
+    static: clarity, sharpness, color accuracy, and overall aesthetic appeal of the
+      video frames
+    temporal: Temporal smoothness evaluates the temporal coherence of video frames
+      and the absence of temporal artifacts such as flickering or jittering.
+    dynamic: Dynamic degree evaluates the extent to which the video incorporates large
+      motions and dynamic scenes, which contributes to the overall liveliness and
+      engagement measurement of the content.
+    text_video: Text-video (TV) correspondence assesses how accurately the video content
+      reflects the details, themes, and actions described in the prompt, ensuring
+      that the generated video effectively translates the text input into a visual
+      narrative.
+  table_path: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_transformer_task_lora_r8_raw_clip_two_stage5_5_seed42/preparation/task_tables.json
+  table_sha256: 5294d7efc4aee8443cb2fb18065975447463d0443e743f8347b9c5174bd8e1a9
+  table_protocol: fp32_raw_clip_text_projection_identity
+  reference_table_path: /hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_task_lora_fusion/reference/centered_task_tables.json
+  reference_table_sha256: 19422a9cc43e08161cd7e221f5ea944380cddf88647696b7c9b3aeeea224e5e2
+model:
+  head_policy: private
+  film_video_condition: video_only
+  name: multimodal_readout_variants
+  d_model: 512
+  dimension_encoder:
+    kind: clip
+    model_dir: /hdd/u202511081000084/IMC_QZL/pretrained_models/clip-vit-large-patch14
+    feature_dim: 768
+  artifact_query_sigmoid:
+    num_queries: 2
+    lambda_max: 2.0
+    lambda_init: 0.1
+    eps: 1.0e-06
+  backbones:
+    vital:
+      model_dir: /hdd/u202511081000084/IMC_QZL/pretrained_models/VITAL-Vision-Encoder-300M
+      dtype: bfloat16
+      frame_chunk_size: 4
+    slowfast:
+      checkpoint_path: /hdd/u202511081000084/IMC_QZL/pretrained_models/slowfast.pth
+      max_positions: 256
+    blip:
+      checkpoint_path: /hdd/u202511081000084/IMC_QZL/pretrained_models/model_large.pth
+      bert_path: /hdd/u202511081000084/IMC_QZL/pretrained_models/bert-large-uncased
+      med_config: /hdd/u202511081000084/IMC_QZL/AIDER/configs/med_config.json
+      image_size: 224
+      dtype: bfloat16
+      text_parameter_precision: fp32_master_bf16_embedding_outputs
+      max_text_length: 50
+      text_padding: max_length
+      train_text_encoder: true
+      text_encoder_gradient_checkpointing: true
+  blip_temporal_sa: true
+  task_embedding_transform: fp32_raw_clip_text_projection_identity
+  readout_variant: transformer_task_lora
+  readout_spec:
+    width: 1536
+    depth: 2
+    heads: 12
+    ffn_hidden: 1536
+    dropout: 0.0
+    activation: gelu
+    block: u=x+Attention(LN1(x)); y=u+FFN(LN2(u))
+    final_norm: true
+    fixed_sinusoidal_positions: true
+    checkpoint_use_reentrant: false
+  task_film_policy: private
+  alpha_policy: private
+  task_lora:
+    rank: 8
+    alpha: 16
+    dropout: 0.05
+    bias: false
+    targets:
+    - q_proj
+    - k_proj
+    - v_proj
+    - out_proj
+    - fc1
+    - fc2
+    selection: explicit_task_id
+    initialization: independent_random_A_zero_B
+data:
+  train_manifest: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_transformer_task_lora_r8_raw_clip_two_stage5_5_seed42/preparation/train.jsonl
+  val_manifest: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_transformer_task_lora_r8_raw_clip_two_stage5_5_seed42/preparation/test.jsonl
+  test_manifest: null
+  video_root: /hdd/u202511081000084/IMC_QZL/My_Datasets/AIGV-DB/MOS/MOS_Videos
+  num_frames: 8
+  min_total_frames: 8
+  vital_size: 448
+  expert_size: 224
+  artifact:
+    cache_dir: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/cache/artifact_prior_v3_g9
+    normalization: percentile
+    percentile_lo: 1.0
+    percentile_hi: 99.0
+    fixed_scale: 0.1
+    gaussian_kernel_size: 9
+    gaussian_sigma: 0.0
+    fb_alpha: 0.05
+    fb_beta: 1.5
+    tex_percentile: 70.0
+    tex_abs_thr: 0.03
+    structure_percentile: 90.0
+    readonly_manifest: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_transformer_task_lora_r8_raw_clip_two_stage5_5_seed42/preparation/prior_manifest.json
+loader:
+  video_batch_size: 8
+  num_workers: 4
+  pin_memory: true
+  persistent_workers: true
+  drop_last: false
+  sampler_seed: 9042
+training:
+  initialization: /hdd/u202511081000084/IMC_QZL/AIDER/artifacts/baseline_seed42_initialization.pt
+  device: cuda:0
+  precision: bfloat16
+  cpu_threads: 2
+  seed: 42
+  lr: 0.0001
+  module_lrs:
+    text_video_backbone: 1.0e-05
+  weight_decay: 0.05
+  betas:
+  - 0.9
+  - 0.999
+  warmup_ratio: 0.05
+  gradient_clip: null
+  rank_loss_weight: 0.0
+  epochs: 10
+  gradient_accumulation: 1
+  output_dir: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_transformer_task_lora_r8_raw_clip_two_stage5_5_seed42
+  resume: null
+  warmup_steps: 116
+  loss_kind: smooth_l1
+  smooth_l1_beta: 0.1
+evaluation:
+  device: cuda:0
+  precision: bfloat16
+  checkpoint: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_transformer_task_lora_r8_raw_clip_two_stage5_5_seed42/best.pt
+  best_epochs:
+  - 6
+  - 10
+inference:
+  device: cuda:0
+  precision: bfloat16
+  checkpoint: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_transformer_task_lora_r8_raw_clip_two_stage5_5_seed42/best.pt
+mixed_task_experiment:
+  loss: smooth_l1
+  beta: 0.1
+  reduction: sample_mean
+  sampling: global_pair_permutation_cpu_seed_plus_epoch
+  batch_size: 8
+  sampler_seed: 9042
+  blip_update_policy: all_tasks
+experiment:
+  contract: aider_aigvqa_dense_transformer_task_lora_raw_clip_r8_v1
+  variant: two_stage
+  physical_gpu: 3
+  parent: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/film_video_only_private_task_modules_shared_gate_no_clip_mi03_raw_clip_projection_seed42
+  parent_config_sha256: e70062a6178983ad87f0560d9f5b19d3faeb3974a51f52c2f9d3b65ada466e1a
+  task_embedding_transform: fp32_raw_clip_text_projection_identity
+  initialization: original_pretrained_and_untrained_seed42
+  checkpoint_includes_complete_blip_text: true
+  automatic_baseline_replacement: false
+baseline:
+  name: Ordinary shared Transformer with independent task LoRAs
+  selection: Independent ablation; original split; not a Baseline replacement
+  runtime_architecture:
+    depth: 2
+    width: 1536
+    heads: 12
+    ffn_hidden: 1536
+    routed_experts: 0
+    gates: 0
+ablation:
+  contract: aider_aigvqa_dense_transformer_task_lora_raw_clip_r8_v1
+  variant: two_stage
+  gpu: 3
+  tasks:
+  - static
+  - temporal
+  - dynamic
+  - text_video
+  task_ids:
+  - 0
+  - 1
+  - 2
+  - 3
+  depth: 2
+  epochs: 10
+  warmup: 116
+private_task_modules:
+  task_modulators: 12
+  alpha_generators: 4
+  heads: 4
+  task_lora_sets: 4
+  task_selection: explicit_task_id
+loss_protocol: &id001
+  regression:
+    kind: smooth_l1
+    beta: 0.1
+    reduction: sample_mean
+  auxiliary: null
+  combination: regression_only
+  precision: float32
+protocol:
+  contract: aider_aigvqa_dense_transformer_task_lora_raw_clip_r8_v1
+  variant: two_stage
+  output_root: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_transformer_task_lora_r8_raw_clip_two_stage5_5_seed42
+  task_table_sha256: 5294d7efc4aee8443cb2fb18065975447463d0443e743f8347b9c5174bd8e1a9
+  task_embedding_transform: fp32_raw_clip_text_projection_identity
+  train_sha256: bb0cad63c209234d5bef5076c1a7a9877574acbd58791116d93da29931ef0f50
+  test_sha256: 53eb08cd5e0624f5498e602e38024b0f2fc836515a5147141f292458ad0f3068
+  prior_manifest_sha256: 5ac594c9a8d3f9ace42b10a8f5c49f9bed92fe5263b0e27166c970769a0b1220
+  inventory_sha256: 93c871c822caec053a8968067ffd089d898c30630f958c1ce0a379989753e814
+  projection_audit_sha256: 96ea70dd23ca3c4c850b020df487667edd1d8bff2262109d563cff342a9cb590
+  reference_snapshot_sha256: d722205dfceadc13decaf3f9ffe66dc9f20460b7a818df52e2fd1ad1e39b313b
+  source_snapshot_sha256: 05abcdc81da43922aa2db4595e126f4edd3082047676fd4c2febe55be88c542e
+  loss_protocol: *id001
+training_strategy: two_stage
+training_phases:
+- phase: dense
+  epochs:
+  - 1
+  - 5
+- phase: adapter
+  epochs:
+  - 6
+  - 10
+phase_transition:
+  after_updates: 1155
+  initialization: epoch5_last_not_test_best
+  preserve_other_adam_states: true
+  reset_learning_rate: false
+  warmup_again: false
+  freeze: fusion_shared_linears_biases_layernorms_and_final_norm_only
+  other_trainable_modules: unchanged
+  new_adapter_adam_state: empty
