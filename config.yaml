@@ -56,7 +56,7 @@ model:
       text_encoder_gradient_checkpointing: true
   blip_temporal_sa: true
   task_embedding_transform: fp32_raw_clip_text_projection_identity
-  readout_variant: transformer_task_lora
+  readout_variant: shared_film_task_conditioned_lora
   readout_spec:
     width: 1536
     depth: 2
@@ -68,8 +68,8 @@ model:
     final_norm: true
     fixed_sinusoidal_positions: true
     checkpoint_use_reentrant: false
-  task_film_policy: private
-  alpha_policy: private
+  task_film_policy: shared
+  alpha_policy: shared
   task_lora:
     rank: 8
     alpha: 16
@@ -82,8 +82,19 @@ model:
     - out_proj
     - fc1
     - fc2
-    selection: explicit_task_id
-    initialization: independent_random_A_zero_B
+    sharing: shared_A_B_and_modulator_across_tasks_per_projection
+    condition: fixed_raw_clip_projection_768
+    selection: embedding_conditioning_no_task_parameter_bank
+    modulation:
+      kind: linear_residual
+      input_width: 768
+      output_width: 8
+      precision: float32
+      initial_value: 1.0
+      residual_initial_value: 0.0
+      weight_init: zeros
+      bias_init: zeros
+    initialization: original_first_task_random_A_zero_B_isolated_rng
 data:
   train_manifest: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_transformer_task_lora_r8_raw_clip_two_stage5_5_seed42/preparation/train.jsonl
   val_manifest: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_transformer_task_lora_r8_raw_clip_two_stage5_5_seed42/preparation/test.jsonl
@@ -132,7 +143,7 @@ training:
   rank_loss_weight: 0.0
   epochs: 10
   gradient_accumulation: 1
-  output_dir: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_transformer_task_lora_r8_raw_clip_two_stage5_5_seed42
+  output_dir: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_shared_film_task_conditioned_lora_r8_raw_clip_residual_gate_two_stage5_5_seed42_aider_lora
   resume: null
   warmup_steps: 116
   loss_kind: smooth_l1
@@ -140,14 +151,14 @@ training:
 evaluation:
   device: cuda:0
   precision: bfloat16
-  checkpoint: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_transformer_task_lora_r8_raw_clip_two_stage5_5_seed42/best.pt
+  checkpoint: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_shared_film_task_conditioned_lora_r8_raw_clip_residual_gate_two_stage5_5_seed42_aider_lora/best.pt
   best_epochs:
   - 6
   - 10
 inference:
   device: cuda:0
   precision: bfloat16
-  checkpoint: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_transformer_task_lora_r8_raw_clip_two_stage5_5_seed42/best.pt
+  checkpoint: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_shared_film_task_conditioned_lora_r8_raw_clip_residual_gate_two_stage5_5_seed42_aider_lora/best.pt
 mixed_task_experiment:
   loss: smooth_l1
   beta: 0.1
@@ -157,29 +168,35 @@ mixed_task_experiment:
   sampler_seed: 9042
   blip_update_policy: all_tasks
 experiment:
-  contract: aider_aigvqa_dense_transformer_task_lora_raw_clip_r8_v1
+  contract: aider_aigvqa_shared_film_task_conditioned_shared_lora_raw_clip_residual_gate_two_stage5_5_r8_v1
   variant: two_stage
-  physical_gpu: 3
-  parent: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/film_video_only_private_task_modules_shared_gate_no_clip_mi03_raw_clip_projection_seed42
-  parent_config_sha256: e70062a6178983ad87f0560d9f5b19d3faeb3974a51f52c2f9d3b65ada466e1a
+  physical_gpu: 1
+  resource_root: /hdd/u202511081000084/IMC_QZL/AIDER
+  code_root: /hdd/u202511081000084/IMC_QZL/AIDER-LoRA
+  parent: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_shared_film_task_conditioned_lora_r8_raw_clip_residual_gate_joint_seed42
+  parent_config_sha256: b1c9e929b9be3ebd451245d9ede0b210562d3b75091c37efc8c0676e263c27f5
   task_embedding_transform: fp32_raw_clip_text_projection_identity
   initialization: original_pretrained_and_untrained_seed42
   checkpoint_includes_complete_blip_text: true
   automatic_baseline_replacement: false
+  comparison_control: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_shared_film_task_conditioned_lora_r8_raw_clip_residual_gate_joint_seed42
 baseline:
-  name: Ordinary shared Transformer with independent task LoRAs
-  selection: Independent ablation; original split; not a Baseline replacement
+  name: Shared FiLM and channel-residual shared LoRA with unmodified raw CLIP task
+    embeddings
+  selection: Independent 5+5 ablation against raw CLIP joint; original split
   runtime_architecture:
     depth: 2
     width: 1536
     heads: 12
     ffn_hidden: 1536
     routed_experts: 0
-    gates: 0
+    channel_modulators: 12
+    heads_private: 4
+    shared_lora_and_gate_parameters: 368736
 ablation:
-  contract: aider_aigvqa_dense_transformer_task_lora_raw_clip_r8_v1
+  contract: aider_aigvqa_shared_film_task_conditioned_shared_lora_raw_clip_residual_gate_two_stage5_5_r8_v1
   variant: two_stage
-  gpu: 3
+  gpu: 1
   tasks:
   - static
   - temporal
@@ -193,12 +210,6 @@ ablation:
   depth: 2
   epochs: 10
   warmup: 116
-private_task_modules:
-  task_modulators: 12
-  alpha_generators: 4
-  heads: 4
-  task_lora_sets: 4
-  task_selection: explicit_task_id
 loss_protocol: &id001
   regression:
     kind: smooth_l1
@@ -208,18 +219,29 @@ loss_protocol: &id001
   combination: regression_only
   precision: float32
 protocol:
-  contract: aider_aigvqa_dense_transformer_task_lora_raw_clip_r8_v1
+  contract: aider_aigvqa_shared_film_task_conditioned_shared_lora_raw_clip_residual_gate_two_stage5_5_r8_v1
   variant: two_stage
-  output_root: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_transformer_task_lora_r8_raw_clip_two_stage5_5_seed42
+  output_root: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_shared_film_task_conditioned_lora_r8_raw_clip_residual_gate_two_stage5_5_seed42_aider_lora
+  resource_root: /hdd/u202511081000084/IMC_QZL/AIDER
+  code_root: /hdd/u202511081000084/IMC_QZL/AIDER-LoRA
   task_table_sha256: 5294d7efc4aee8443cb2fb18065975447463d0443e743f8347b9c5174bd8e1a9
   task_embedding_transform: fp32_raw_clip_text_projection_identity
+  task_embedding_mean_subtraction: false
+  task_embedding_row_l2_normalization: false
+  intent_adapter_used: false
+  comparison_control: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_shared_film_task_conditioned_lora_r8_raw_clip_residual_gate_joint_seed42
+  comparison_control_config_sha256: b1c9e929b9be3ebd451245d9ede0b210562d3b75091c37efc8c0676e263c27f5
+  comparison_control_sources_sha256: 705e5c37d0ce96f323a560976506ad9e349895b004f57f398313c55e2ee9ec50
   train_sha256: bb0cad63c209234d5bef5076c1a7a9877574acbd58791116d93da29931ef0f50
   test_sha256: 53eb08cd5e0624f5498e602e38024b0f2fc836515a5147141f292458ad0f3068
   prior_manifest_sha256: 5ac594c9a8d3f9ace42b10a8f5c49f9bed92fe5263b0e27166c970769a0b1220
+  inventory_path: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_transformer_task_lora_r8_raw_clip_two_stage5_5_seed42/preparation/video_inventory.json
   inventory_sha256: 93c871c822caec053a8968067ffd089d898c30630f958c1ce0a379989753e814
+  projection_audit_path: /hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_transformer_task_lora_r8_raw_clip_two_stage5_5_seed42/preparation/projection_audit.json
   projection_audit_sha256: 96ea70dd23ca3c4c850b020df487667edd1d8bff2262109d563cff342a9cb590
   reference_snapshot_sha256: d722205dfceadc13decaf3f9ffe66dc9f20460b7a818df52e2fd1ad1e39b313b
-  source_snapshot_sha256: 05abcdc81da43922aa2db4595e126f4edd3082047676fd4c2febe55be88c542e
+  parent_sources_sha256: 09c78cfb0423012ed82cc28c549d7e42fc641360621acc6e3e5e9b38886bb286
+  parent_config_sha256: cb64be30cbd7edc62fe7c30d4fb5dd84b9fc748c412333ed70a47dc80451a53e
   loss_protocol: *id001
 training_strategy: two_stage
 training_phases:
@@ -240,3 +262,12 @@ phase_transition:
   freeze: fusion_shared_linears_biases_layernorms_and_final_norm_only
   other_trainable_modules: unchanged
   new_adapter_adam_state: empty
+  adapters: shared_A_B_and_channel_modulators
+sharing_policy:
+  task_film: shared_per_video_branch
+  video_film: shared_per_video_branch
+  video_summaries: shared_per_video_branch
+  film_alpha: shared_all_tasks
+  lora: shared_per_layer_and_projection
+  channel_modulator: shared_per_layer_and_projection
+  heads: task_private

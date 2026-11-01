@@ -1,0 +1,8 @@
+{
+  "fusion_base_sha256": "9d81688ea9feaf67c93499f53c3714d84dc396d8eaec4d28ddb61c6e7649c9db",
+  "fusion_base_parameters": 28345344,
+  "construction_cpu_rng_sha256": "deebeee84a1da43276837bc0f376ae8b90228c67f7889a8b1549291375d984e1",
+  "retained_state_sha256": "50dbabfa742d7c94e1c5148dec559cd9e58c2f081a7660667c0625b3f8d66ae7",
+  "parent_parameter_count": 48372107,
+  "trained_checkpoint_loaded": false
+}

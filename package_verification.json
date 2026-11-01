@@ -1,0 +1,121 @@
+{
+  "preinstall_validation_passed": true,
+  "verified_at_utc": "2026-11-01T07:21:25.566698+00:00",
+  "unit_tests": {
+    "passed": 36,
+    "seconds": 7.66,
+    "location": "staged package"
+  },
+  "cli_help_passed": true,
+  "unchanged_native_runtime_files": 52,
+  "allowed_runtime_adaptations": [
+    "utils/protocol.py",
+    "scripts/train_task_lora.py",
+    "config.yaml"
+  ],
+  "cpu_preparation": {
+    "path": "/hdd/u202511081000084/IMC_QZL/AIDER/outputs/source_packages/aider_lora_raw_clip_two_stage5_5_20261101T071224494025Z/staged_cpu_prepare",
+    "readonly_prior_audit": {
+      "videos": 576,
+      "all_sha256_verified": true,
+      "readonly": true,
+      "cache_rebuilt": false,
+      "shape": [
+        8,
+        448,
+        448
+      ],
+      "dtype": "float32",
+      "model_rng_unchanged": true
+    },
+    "paired_initialization": {
+      "passed": true,
+      "non_backbone_parameters_identical": true,
+      "all_state_tensors_identical": true,
+      "all_other_state_tensors_identical": true,
+      "model_rng_identical": true,
+      "initial_prediction_max_abs_error": 0.0,
+      "parameter_tensors": 173,
+      "task_embedding_norms": [
+        18.104578018188477,
+        15.370041847229004,
+        15.927238464355469,
+        17.494054794311523
+      ],
+      "initial_phases": [
+        "dense",
+        "joint"
+      ],
+      "trained_checkpoint_loaded": false,
+      "script_sha256": "030ca26d30e54f17f23fe2f077c4ff48c7ae8efc27facaea7258d688033bccc2"
+    }
+  },
+  "weights_or_caches_copied": false,
+  "training_started": false,
+  "backup_archive": "/hdd/u202511081000084/IMC_QZL/AIDER/outputs/source_backups/aider_lora_before_raw_clip_two_stage5_5_20261101T071224494025Z/before.tar.gz",
+  "postinstall_validation_pending": false,
+  "passed": true,
+  "postinstall_unit_tests": {
+    "passed": 36,
+    "seconds": 7.71,
+    "location": "/hdd/u202511081000084/IMC_QZL/AIDER-LoRA",
+    "resource_env_unset": true
+  },
+  "default_sibling_resource_root_verified": true,
+  "default_config_matches_runtime": true,
+  "cli_resource_root_overrides_environment_verified": true,
+  "installed_cpu_preparation": {
+    "path": "/hdd/u202511081000084/IMC_QZL/AIDER/outputs/source_packages/aider_lora_raw_clip_two_stage5_5_20261101T071224494025Z/installed_cpu_prepare",
+    "readonly_prior_audit": {
+      "videos": 576,
+      "all_sha256_verified": true,
+      "readonly": true,
+      "cache_rebuilt": false,
+      "shape": [
+        8,
+        448,
+        448
+      ],
+      "dtype": "float32",
+      "model_rng_unchanged": true
+    },
+    "paired_initialization": {
+      "passed": true,
+      "non_backbone_parameters_identical": true,
+      "all_state_tensors_identical": true,
+      "all_other_state_tensors_identical": true,
+      "model_rng_identical": true,
+      "initial_prediction_max_abs_error": 0.0,
+      "parameter_tensors": 173,
+      "task_embedding_norms": [
+        18.104578018188477,
+        15.370041847229004,
+        15.927238464355469,
+        17.494054794311523
+      ],
+      "initial_phases": [
+        "dense",
+        "joint"
+      ],
+      "trained_checkpoint_loaded": false,
+      "script_sha256": "030ca26d30e54f17f23fe2f077c4ff48c7ae8efc27facaea7258d688033bccc2"
+    }
+  },
+  "all_173_initial_parameter_tensors_and_all_state_and_rng_equal_source": true,
+  "initial_prediction_max_abs_error": 0.0,
+  "source_runtime_hashes_unchanged": true,
+  "source_run_status_at_verification": {
+    "stage": "training",
+    "variant": "two_stage",
+    "fusion_phase": "dense",
+    "epoch": 3,
+    "step": 140,
+    "completed_epochs": 2,
+    "optimizer_updates": 602,
+    "physical_gpu": 1
+  },
+  "default_output_directory_created": false,
+  "installed": true,
+  "target": "/hdd/u202511081000084/IMC_QZL/AIDER-LoRA",
+  "backup_manifest": "/hdd/u202511081000084/IMC_QZL/AIDER/outputs/source_backups/aider_lora_before_raw_clip_two_stage5_5_20261101T071224494025Z/manifest.json"
+}

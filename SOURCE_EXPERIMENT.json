@@ -1,0 +1,44 @@
+{
+  "source_experiment": "/hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_shared_film_task_conditioned_lora_r8_raw_clip_residual_gate_two_stage5_5_seed42",
+  "source_runtime": "/hdd/u202511081000084/IMC_QZL/AIDER/experiments/aigvqa_raw_clip_residual_gate_two_stage5_5",
+  "source_experiment_status_at_packaging": {
+    "stage": "testing",
+    "variant": "two_stage",
+    "fusion_phase": "dense",
+    "epoch": 2,
+    "optimizer_updates": 462
+  },
+  "source_config_sha256": "e6ef2f733626dc025589b6538e038ff6358566cb0d9b08f05c6e3b054a8232a7",
+  "source_sources_sha256": "ae509357bd01ede7692fdaa4b4dec8424c3894a914a4418e1ce78fb9818cc6b0",
+  "destination": "/hdd/u202511081000084/IMC_QZL/AIDER-LoRA",
+  "packaged_at_utc": "20261101T071224494025Z",
+  "entrypoint": "scripts/train_task_lora.py",
+  "config": "config.yaml",
+  "default_output_dir": "/hdd/u202511081000084/IMC_QZL/AIDER/outputs/multitask/runs/aigvqa_db_shared_film_task_conditioned_lora_r8_raw_clip_residual_gate_two_stage5_5_seed42_aider_lora",
+  "resource_root": "/hdd/u202511081000084/IMC_QZL/AIDER",
+  "default_physical_gpu": 1,
+  "architecture": {
+    "fusion": "two shared ordinary Pre-LN Transformer layers",
+    "task_embedding": "unmodified raw CLIP projection, no Adapter, centering or L2 normalization",
+    "film": "shared per video branch with original video correction",
+    "lora": "shared A/B per projection, g(z)=1+Linear(768,8)(z)",
+    "lora_rank": 8,
+    "lora_alpha": 16,
+    "lora_dropout": 0.05,
+    "lora_projections": 12,
+    "heads": "four private 1536/256/64/16/1 MLPs",
+    "training": "dense epochs1-5; adapter epochs6-10; best epochs6-10",
+    "loss": "FP32 Smooth L1 beta0.1, regression only"
+  },
+  "backup_archive": "/hdd/u202511081000084/IMC_QZL/AIDER/outputs/source_backups/aider_lora_before_raw_clip_two_stage5_5_20261101T071224494025Z/before.tar.gz",
+  "backup_manifest": "/hdd/u202511081000084/IMC_QZL/AIDER/outputs/source_backups/aider_lora_before_raw_clip_two_stage5_5_20261101T071224494025Z/manifest.json",
+  "weights_and_caches_copied": false,
+  "training_started_by_packaging": false,
+  "allowed_runtime_adaptations": [
+    "utils/protocol.py: sibling resource root and independent output directory",
+    "scripts/train_task_lora.py: sibling/env/CLI resource-root resolution",
+    "config.yaml: final package paths and new output identity"
+  ],
+  "lineage_manifest": "COPY_MANIFEST.json",
+  "package_manifest": "PACKAGE_MANIFEST.json"
+}

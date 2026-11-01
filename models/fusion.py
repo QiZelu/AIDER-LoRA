@@ -1,4 +1,4 @@
-"""Two ordinary Pre-LN Transformer blocks with task-specific projection LoRAs."""
+"""Two ordinary Pre-LN Transformer blocks with shared task-conditioned projection LoRAs."""
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -20,14 +20,14 @@ class TaskSelfAttention(nn.Module):
             nn.init.xavier_uniform_(projection.weight)
             nn.init.zeros_(projection.bias)
 
-    def forward(self, features, task_ids):
+    def forward(self, features, condition):
         batch, tokens, width = features.shape
-        projections = [getattr(self, name)(features, task_ids).reshape(
+        projections = [getattr(self, name)(features, condition).reshape(
             batch, tokens, self.heads, self.head_dim).transpose(1, 2)
             for name in ('q_proj', 'k_proj', 'v_proj')]
         attention = F.scaled_dot_product_attention(*projections, dropout_p=0.0)
         attention = attention.transpose(1, 2).contiguous().reshape(batch, tokens, width)
-        return self.out_proj(attention, task_ids)
+        return self.out_proj(attention, condition)
 
 
 class TaskTransformerBlock(nn.Module):
@@ -41,10 +41,10 @@ class TaskTransformerBlock(nn.Module):
             self.fc1 = TaskLoRALinear(width, width, tasks, seed + 950000 + layer_index * 100000)
             self.fc2 = TaskLoRALinear(width, width, tasks, seed + 960000 + layer_index * 100000)
 
-    def forward(self, features, task_ids):
-        features = features + self.attention(self.norm1(features.float()), task_ids)
-        hidden = F.gelu(self.fc1(self.norm2(features.float()), task_ids))
-        return features + self.fc2(hidden, task_ids)
+    def forward(self, features, condition):
+        features = features + self.attention(self.norm1(features.float()), condition)
+        hidden = F.gelu(self.fc1(self.norm2(features.float()), condition))
+        return features + self.fc2(hidden, condition)
 
 
 class TransformerFusion(nn.Module):
@@ -72,25 +72,29 @@ class TransformerFusion(nn.Module):
         if phase not in ('joint', 'dense', 'adapter'):
             raise ValueError('Unknown Transformer/LoRA phase')
         self.phase = phase
-        # Heads are outside the shared fusion base and stay trainable.
+        # Module roles determine the freeze range, including the new gate.
+        adapter_ids = {id(p) for _,m in lora_modules(self) for p in m.adapter.parameters()}
         for name, parameter in self.named_parameters():
             if not name.startswith('heads.'):
-                parameter.requires_grad_((phase != 'dense') if '.adapters.' in name else (phase != 'adapter'))
+                parameter.requires_grad_((phase != 'dense') if id(parameter) in adapter_ids else (phase != 'adapter'))
         for _, module in lora_modules(self):
             module.enabled = phase != 'dense'
 
     def base_parameters(self):
+        adapter_ids = {id(p) for _,m in lora_modules(self) for p in m.adapter.parameters()}
         return ((name, parameter) for name, parameter in self.named_parameters()
-                if not name.startswith('heads.') and '.adapters.' not in name)
+                if not name.startswith('heads.') and id(parameter) not in adapter_ids)
 
     def forward(self, features, condition=None, task_ids=None):
         if task_ids is None or task_ids.device != features.device:
             raise ValueError('Explicit task IDs on feature device are required')
         validate_task_ids(task_ids, len(features), len(self.task_order))
+        if condition is None or condition.shape != (len(features), 768) or condition.device != features.device:
+            raise ValueError('Expected aligned raw task embeddings [B,768]')
         features = features + self.position_encoding
         for block in self.blocks:
             if self.training and torch.is_grad_enabled() and self.use_checkpoint:
-                features = checkpoint(block, features, task_ids, use_reentrant=False)
+                features = checkpoint(block, features, condition, use_reentrant=False)
             else:
-                features = block(features, task_ids)
+                features = block(features, condition)
         return self.final_norm(features.float()), {}

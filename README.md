@@ -1,32 +1,40 @@
-# AIGVQA-DB: shared ordinary Transformer and independent task LoRAs
+# AIDER-LoRA：raw CLIP＋残差 Gate＋5+5
 
-Two independent experiments use the latest raw-CLIP task table without task-mean subtraction or L2 normalization. The four tasks, private FiLM/alpha/Heads, video-only cross-branch FiLM, backbone freeze policy, full BLIP text fine-tuning and temporal SA match the pinned parent. No trained MoE checkpoint initializes these experiments.
+此目录对应最新的 `aigvqa_db_shared_film_task_conditioned_lora_r8_raw_clip_residual_gate_two_stage5_5_seed42` 实现，包含模型源码、训练／评估入口、配置和测试。
 
-The fusion input stays `[B,8,1536]`. Each of two Pre-LN Transformer layers has 12-head self-attention, its residual, then `LayerNorm -> Linear(1536,1536) -> GELU -> Linear(1536,1536)` and a second residual. Sinusoidal positions and final LayerNorm are retained. There are no expert banks, Gates or additional always-on FFNs. Explicit Q/K/V and output projections ensure every LoRA actually executes, including checkpoint recomputation.
+## 模型
 
-Every task owns independent A/B matrices on each layer's Q, K, V, attention output, fc1 and fc2: `W_t = W_shared + (16/8) B_t A_t`. Rank8, alpha16 and dropout0.05 follow MoE-Rater's actual stage-two shell configuration and its Attention+FFN injection scope. A is independently seeded; B is zero. At initialization all adapter deltas are zero by design. Each task adds 294,912 parameters (1,179,648 for four tasks); biases and LayerNorm have no LoRA. Mixed batches dispatch only present tasks and restore original row order, so absent task parameters have no gradients or Adam/weight-decay updates. Selection uses explicit task IDs, not CLIP similarity or a router.
+- 任务表示：原始 CLIP 文本投影（768维），不经过 Intent Adapter、去中心化或 L2 归一化；任务表固定。
+- 三分支 FiLM、视频修正和 α 网络保留原共享方式；视觉 Backbone 冻结，BLIP 文本和时序 SA 继续训练。
+- Fusion 为两层共享普通 Pre-LN Transformer，宽度1536、12个注意力头，每层的 Q/K/V/Out/FC1/FC2 加共享 LoRA，共12处。
+- LoRA 为 `W0*x + (alpha/r)*B*diag(1+Linear(768,8)(z))*A*x`，rank8、alpha16、dropout0.05。A 随机初始化，B 和 Gate 的权重／偏置为0；初始通道权重为1。
+- 四个任务各有一个私有 `1536→256→64→16→1` Head，前三层后使用 ReLU，逐帧评分后对8帧取均值。
 
-- `joint`, physical CUDA0: shared Transformer plus task LoRAs train for all ten epochs.
-- `two_stage`, physical CUDA3: epochs1-5 train the ordinary Transformer with all LoRAs bypassed/frozen. After update1155, freeze only fusion base linears, biases, block LayerNorms and final LayerNorm, activate the original zero-delta task LoRAs, and continue epochs6-10. FiLM, alpha, private Heads, BLIP text, temporal SA and every other originally trainable module continue training. Their Adam moments and global LR step are preserved; LoRA Adam states begin empty. There is no scheduler restart or repeated warmup. The switch uses epoch5 last, never test-best. `stage1_last.pt` is an immutable hard link to the complete atomic epoch-five checkpoint, and later last.pt writes replace the path rather than modify this inode.
+## 5+5 训练
 
-Both variants start from identical untrained seed42 parameters and CPU/CUDA RNG. Retained non-fusion state matches the untrained raw-CLIP parent (121 tensors); pretrained files are verified by SHA256. Independent local CPU sampling reproduces all ten original permutations (seeds9042-9051). Original 461/115 videos, 1844/460 task records, eight-frame anchor policy and 576 read-only Prior caches are unchanged; missing/changed caches fail rather than rebuild. Batch8 has a four-record tail, 231 updates/epoch, 2310 total. AdamW LR1e-4, BLIP text1e-5, weight decay0.05, 116-step warmup then one cosine schedule. BF16 forward, FP32 trainable parameters/Adam moments, no accumulation or clipping, four data-loader workers.
+第1～5轮关闭并冻结 LoRA A/B 与 Gate。第6～10轮启用 LoRA，仅冻结 Fusion 基础线性层、偏置、LayerNorm 和最终归一化层；FiLM、α、视频摘要、私有 Head、BLIP 文本、时序 SA 等原可训练模块持续更新。
 
-The objective is FP32 Smooth L1 beta0.1 only. Task-expert MI is undefined without experts and is removed, with no replacement auxiliary loss. Reports separate sample-mean regression from update-mean loss.
+第1155次更新后直接延续第5轮 last，保留持续训练参数的 Adam 状态，新 LoRA 状态为空；不重启学习率或再次预热。总计10轮、2310步，batch8，尾批4。损失仅为 FP32 Smooth L1（β=0.1）。每轮测试，best 仅从第6～10轮按四任务宏平均 SROCC 选择，同分保留较早轮次。
 
-Use `/home/u202511081000084/miniconda3/envs/uve-copy/bin/python` from this directory:
+## 资源与使用
+
+默认资源根目录为同级 `AIDER`。预训练权重、未训练 seed42 初始化、任务表、Prior、数据及历史对照通过该目录只读引用。本源码包不携带 `.pt`、`.pth` 或其他缓存文件。依赖清单为 `requirements.txt`，BLIP 配置副本位于 `configs/med_config.json`；实际配置保留来源实验已核验的 AIDER 资源路径。
+
+在本目录运行：
 
 ```bash
-python -B scripts/train_task_lora.py --mode prepare --variant joint
-python -B scripts/train_task_lora.py --mode prepare --variant two_stage
-CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 python -B -m unittest discover -s tests -v
-python -u -B scripts/train_task_lora.py --mode train --variant joint --gpu 0 --background
-python -u -B scripts/train_task_lora.py --mode train --variant two_stage --gpu 3 --background
+python -B scripts/train_task_lora.py --help
+python -B scripts/train_task_lora.py --mode prepare
+python -u -B scripts/train_task_lora.py --mode train --gpu 1 --background
+python -B -m unittest discover -s tests -v
 ```
 
-Modes: `prepare|preflight|train|evaluate|summarize`; arguments: `--variant joint|two_stage`, `--gpu` physical index, `--output-dir`, evaluate-only `--checkpoint`, train-only `--background`. Defaults are independent `outputs/multitask/runs/aigvqa_db_transformer_task_lora_r8_raw_clip_joint_seed42` and `aigvqa_db_transformer_task_lora_r8_raw_clip_two_stage5_5_seed42`. Existing run/launch artifacts are never overwritten. Startup requires an idle selected GPU and at least16GiB free; PyTorch allocation is capped at14GiB and driver process memory must remain below16GiB. No eviction, reassignment, reduced batch or automatic retry. A failure affects only its own worker.
+使用 `--resource-root /path/to/AIDER` 或 `AIDER_RESOURCE_ROOT` 指定其他资源位置，命令行参数优先；使用 `--output-dir` 指定新的实验目录。默认输出目录为来源实验名称后附加 `_aider_lora` 的独立目录。训练入口拒绝覆盖已有训练，也不会自动重试或停止其他 GPU 进程；每进程上限16 GiB。此次源码替换本身不启动训练。
 
-Real preflight checks six disposable batch8 updates per training phase (two mixed, four single-task); two-stage also verifies the optimizer/scheduler transition. It checks gradients, frozen parameters/buffers, absent task adapter/FiLM/Head parameter and Adam invariance, FP32 states, driver memory and full BLIP-text/base/adapter checkpoint restoration within1e-6. Initial A gradients can be zero while B is zero. Preflight updates are discarded and seed42 rebuilt before formal training. CPU tests cover plain-Transformer equivalence, task isolation/reordering, checkpointing recomputation and inactive Adam behavior, deterministic paired initialization, all sample permutations, phase-transition state preservation and checkpoint identity rejection.
+可用模式为 `prepare|preflight|train|evaluate|summarize`，variant 为 `two_stage`。预检包含两个阶段共12个真实 batch8，正式训练前重新初始化。完成后自动评估 best／last、导出460行长表及115行宽表，并与 raw CLIP joint 对照比较。
 
-Every epoch tests all four tasks. Best uses strict improvement of test macro SROCC, ties keep the earlier epoch. Joint candidates are epochs1-10; two-stage candidates are adapter epochs6-10 only. Epochs1-5 remain in history and exports. After ten epochs, best/last are reloaded and evaluated, exporting 460-row long/115-row wide predictions, PLCC/SROCC/KROCC/RMSE, FiLM diagnostics, per-projection task LoRA delta norms/cosines, and gradient diagnostics. Strict checkpoints include the entire fusion base even when frozen, all task LoRAs and complete fine-tuned BLIP text, and bind the variant, task registry/table, split, source hashes, phase and objective. Old MoE or other-variant/run checkpoints are rejected.
+Checkpoint 绑定配置、源码、实验目录和训练阶段；已有实验继续使用原封存入口及配置评估，本目录创建独立的新实验。
 
-`summary.json` is created only after that run's complete checks and best/last exports. Once both summaries exist, `verification/comparison_metrics.csv` and `comparison.json` compare them. Test data participate in model selection, the best candidate windows differ, the model seed is fixed, and removal of MoE also removes MI. These experiments do not automatically replace the Baseline. Existing runtimes, results and other training processes are untouched.
+## 来源与回滚
+
+`SOURCE_EXPERIMENT.json` 记录本包来源、默认配置和旧目录备份；`PACKAGE_MANIFEST.json` 记录本包文件哈希；`package_verification.json` 记录复制后的验证结果。`SOURCE_PROVENANCE.json` 和 `COPY_MANIFEST.json` 保留来源实现的历史溯源数据，后者不是本次包的文件清单。`reference/` 保存来源配置、源码清单和原实现验证报告的只读副本。

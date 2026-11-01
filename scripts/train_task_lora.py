@@ -1,4 +1,4 @@
-"""Independent AIGVQA ordinary Transformer + private task LoRA experiments."""
+"""AIGVQA raw CLIP/shared FiLM/residual Gate LoRA: dense5 then adapter5."""
 import argparse
 import os
 from pathlib import Path
@@ -21,23 +21,27 @@ def startup_memory(gpu):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--mode',choices=('prepare','preflight','train','evaluate','summarize'),default='train')
-    parser.add_argument('--variant',choices=('joint','two_stage'),default='joint')
+    parser.add_argument('--variant',choices=('two_stage',),default='two_stage')
     parser.add_argument('--gpu',type=int)
+    parser.add_argument('--resource-root',type=Path,
+                        default=Path(os.environ.get('AIDER_RESOURCE_ROOT',str(ROOT.parent / 'AIDER'))))
     parser.add_argument('--output-dir',type=Path)
     parser.add_argument('--checkpoint',type=Path)
     parser.add_argument('--background',action='store_true')
     args = parser.parse_args()
-    gpu = args.gpu if args.gpu is not None else {'joint':0,'two_stage':3}[args.variant]
+    gpu = args.gpu if args.gpu is not None else 1
     if not 0 <= gpu <= 7:
         parser.error('Expected physical GPU 0..7')
     if bool(args.checkpoint) != (args.mode == 'evaluate'):
         parser.error('--checkpoint is required only for evaluate')
     if args.background and args.mode != 'train':
         parser.error('--background applies only to train')
+    os.environ['AIDER_RESOURCE_ROOT'] = str(args.resource_root.resolve())
     os.environ['CUDA_VISIBLE_DEVICES'] = '' if args.mode in ('prepare','summarize') else str(gpu)
     os.environ['OMP_NUM_THREADS'] = os.environ['OPENBLAS_NUM_THREADS'] = '2'
     os.environ['TOKENIZERS_PARALLELISM'] = 'false'
     os.environ['HF_HUB_OFFLINE'] = os.environ['TRANSFORMERS_OFFLINE'] = '1'
+    os.environ.setdefault('MPLCONFIGDIR',str(args.resource_root.resolve()/'outputs/cache/matplotlib'))
     from utils.protocol import OUTPUTS,prepare,load_prepared,selected_source_hashes
     from engine.io import write_json
     root = (args.output_dir or OUTPUTS[args.variant]).resolve()
@@ -54,13 +58,18 @@ def main():
             raise FileExistsError('Existing launch/training; refuse overwrite or automatic retry')
         prepare(root,gpu,args.variant)
         command = [sys.executable,'-u','-B',str(Path(__file__).resolve()),'--mode','train',
-                   '--variant',args.variant,'--gpu',str(gpu),'--output-dir',str(root)]
+                   '--variant',args.variant,'--gpu',str(gpu),'--output-dir',str(root),
+                   '--resource-root',str(args.resource_root.resolve())]
         with log.open('x') as handle:
             process = subprocess.Popen(command,cwd=ROOT,stdout=handle,stderr=subprocess.STDOUT,start_new_session=True)
         info = dict(pid=process.pid,gpu=gpu,variant=args.variant,command=command,log=str(log),output_dir=str(root),
             process_memory_limit_gib=16,automatic_retry=False,total_epochs=10,total_updates=2310,
-            lora=dict(rank=8,alpha=16,dropout=.05),loss='fp32_smooth_l1_beta0.1_no_mi',
-            pipeline='disposable phase-aware real batch8 preflight -> fresh seed42 -> 10 epochs -> best/last reload evaluation')
+            lora=dict(rank=8,alpha=16,dropout=.05,sharing='shared',modulation='one_plus_linear768to8',
+                      gate_weight_init='zeros',gate_bias_init='zeros',channel_residual_initial_value=0.0,
+                      channel_weight_initial_value=1.0),film='shared',loss='fp32_smooth_l1_beta0.1_no_mi',
+            task_embedding='unmodified_raw_clip_projection_no_centering_no_l2_no_intent_adapter',
+            pipeline='12 disposable phase-aware real batch8 preflight steps -> fresh seed42 -> dense5 -> adapter5 -> best/last reload evaluation',
+            best_epochs=[6,10],phase_transition_after_updates=1155,learning_rate_restarted=False)
         write_json(launch,info)
         print(info,flush=True)
         return
@@ -101,7 +110,7 @@ def main():
         return
     config = prepare(root,gpu,args.variant)
     if args.mode == 'prepare':
-        print('Data, raw task table and read-only Priors verified; no training:',root)
+        print('Data, unmodified raw CLIP task embeddings and read-only Priors verified; no training:',root)
         return
     train(config,args.mode)
 

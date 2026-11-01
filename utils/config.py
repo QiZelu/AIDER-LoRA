@@ -9,8 +9,8 @@ from typing import Any
 import numpy as np
 import yaml
 
-DEFAULT_BASELINE = "film_transformer"
-DEFAULT_CONFIG = Path(__file__).resolve().parents[1] / "configs" / "baseline.yaml"
+DEFAULT_BASELINE = "shared_film_task_conditioned_lora"
+DEFAULT_CONFIG = Path(__file__).resolve().parents[1] / "config.yaml"
 
 
 def _apply_override(config: dict[str, Any], expression: str) -> None:

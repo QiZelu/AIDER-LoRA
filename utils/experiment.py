@@ -1,4 +1,4 @@
-"""The independent shared-Gate experiment has one pinned configuration."""
+"""Pinned shared FiLM/task-conditioned shared-LoRA experiment configuration."""
 from utils.protocol import ROOT, validate_config, validate_data, CONTRACT
 
 

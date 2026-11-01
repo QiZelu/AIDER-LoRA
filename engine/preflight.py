@@ -14,12 +14,13 @@ from engine.gradients import prepare_gradients
 from engine.io import write_json
 from engine.losses import quality_training_loss
 from engine.memory import check_memory
-from engine.optim import build_optimizer, _scheduler, transition_to_adapters
+from engine.optim import build_optimizer, _scheduler
+from engine.stages import switch_to_adapters, lora_state_digest
 from engine.runtime import autocast_context, move_to_device
 from engine.sampling import MixedPairSampler
-from models.lora import lora_modules, task_adapter_items
+from models.lora import lora_modules, adapter_items
 from models.task_private import private_module_items
-from utils.protocol import ROOT, validate_data
+from utils.protocol import REFERENCE, validate_data
 
 
 def check_precision(model,optimizer=None):
@@ -34,7 +35,7 @@ def check_precision(model,optimizer=None):
     if any(p.requires_grad != (phase != 'adapter') for _,p in model.fusion.base_parameters()):
         raise AssertionError('Invalid fusion base freeze range')
     for _,module in lora_modules(model):
-        if module.enabled != (phase != 'dense') or any(p.requires_grad != (phase != 'dense') for p in module.adapters.parameters()):
+        if module.enabled != (phase != 'dense') or any(p.requires_grad != (phase != 'dense') for p in module.adapter.parameters()):
             raise AssertionError('Invalid task LoRA phase')
     if optimizer is not None:
         actual = [p for group in optimizer.param_groups for p in group['params']]
@@ -53,7 +54,6 @@ def check_precision(model,optimizer=None):
 
 def private_items(model):
     yield from private_module_items(model)
-    yield from task_adapter_items(model)
 
 
 def check_private_activity(model,ids):
@@ -94,7 +94,7 @@ def sampling_audit():
         if sorted(i for b in batches for i in b) != list(range(1844)):
             raise AssertionError('Sampler missed/duplicated records')
         orders.append(sampler.digest())
-    reference = json.loads((ROOT / 'reference/parent_preflight.json').read_text())['sampling_sha256']
+    reference = json.loads((REFERENCE / 'parent_preflight.json').read_text())['sampling_sha256']
     if orders != reference or not torch.equal(before,torch.get_rng_state()):
         raise AssertionError('Original CPU sample order/RNG changed')
     return orders
@@ -114,7 +114,8 @@ def reload_probe(model,config,test,device,folder):
             expected = model(sample)['predictions'].float().clone()
         with torch.no_grad():
             model.fusion.blocks[0].fc1.base.weight.add_(0.2)
-            next(iter(model.fusion.blocks[0].fc1.adapters.values())).B.weight.add_(0.1)
+            model.fusion.blocks[0].fc1.adapter.B.weight.add_(0.1)
+            model.fusion.blocks[0].fc1.adapter.gate.bias.add_(0.3)
             next(model.fusion.heads.parameters()).add_(0.1)
             next(p for p in model.tv_backbone.model.text_encoder.parameters() if p.ndim == 1).add_(1.)
         payload = load_model_checkpoint(model,path,config)
@@ -139,6 +140,8 @@ def preflight(model,config,folder,watcher):
     train, test = PairDataset(config,'train'), PairDataset(config,'val')
     if (train.video_count,test.video_count,len(train),len(test)) != (461,115,1844,460):
         raise AssertionError('Wrong original split')
+    if len(list(private_module_items(model))) != 4 or any('.by_task.' in n for n,_ in model.named_parameters()):
+        raise AssertionError('Only the four scoring Heads may be task-private')
     if len(list(lora_modules(model))) != 12 or any('moe' in name or 'experts' in name for name,_ in model.named_parameters()):
         raise AssertionError('Invalid dense Transformer/LoRA architecture')
     device = next(model.parameters()).device
@@ -147,7 +150,7 @@ def preflight(model,config,folder,watcher):
     reports, deltas, transitions = [], {}, []
     for phase in phases:
         if phase == 'adapter':
-            optimizer,scheduler,transition = transition_to_adapters(model,optimizer,scheduler,config)
+            optimizer,scheduler,transition = switch_to_adapters(model,optimizer,scheduler,config,expected_updates=6)
             transitions.append(transition)
         check_precision(model,optimizer)
         frozen = frozen_digest(model)
@@ -159,6 +162,7 @@ def preflight(model,config,folder,watcher):
             optimizer.zero_grad(set_to_none=True)
             previous = {name:optimizer_snapshot(module,optimizer) for name,_,module in private_items(model)}
             previous_base = fusion_base_digest(model)
+            disabled_adapter_state = lora_state_digest(model) if phase=='dense' else None
             with autocast_context(device):
                 output = model(batch)
             if output['routing']['concatenated_features'].shape != (8,8,1536) or output['frame_scores'].shape != (8,8):
@@ -181,12 +185,24 @@ def preflight(model,config,folder,watcher):
             if phase == 'adapter' and any(p.grad is not None for _,p in model.fusion.base_parameters()):
                 raise AssertionError('Frozen fusion base received gradients')
             if phase != 'dense':
-                for name,task,adapter in task_adapter_items(model):
-                    if activity[name] and not torch.count_nonzero(adapter.B.weight.grad):
-                        raise AssertionError('Active LoRA B has no effective gradient: '+name)
+                for name,adapter in adapter_items(model):
+                    if adapter.B.weight.grad is None or not torch.count_nonzero(adapter.B.weight.grad):
+                        raise AssertionError('Shared LoRA B has no effective gradient: '+name)
+                    if step >= 2 and (adapter.gate.weight.grad is None or not torch.count_nonzero(adapter.gate.weight.grad)
+                                      or adapter.A.weight.grad is None or not torch.count_nonzero(adapter.A.weight.grad)):
+                        raise AssertionError('Channel modulator gradient did not open after B update: '+name)
+                    if any(p.grad is None for p in adapter.parameters()):
+                        raise AssertionError('Shared adapter missed a gradient: '+name)
+            if phase=='dense' and any(p.grad is not None or p in optimizer.state for _,a in adapter_items(model) for p in a.parameters()):
+                raise AssertionError('Disabled dense-stage LoRA has gradients or Adam state')
+            for name in ('technical_projector','motion_projector','tv_projector','alpha_gate'):
+                if any(p.grad is None for p in getattr(model,name).parameters()):
+                    raise AssertionError('Shared FiLM/alpha gradient missing: '+name)
             optimizer.step()
             scheduler.step()
             check_precision(model,optimizer)
+            if disabled_adapter_state is not None and lora_state_digest(model)!=disabled_adapter_state:
+                raise AssertionError('Dense-stage adapter weights changed')
             for name,_,module in private_items(model):
                 if not activity[name] and optimizer_snapshot(module,optimizer) != previous[name]:
                     raise AssertionError('Absent/disabled private parameter or Adam state changed: '+name)
@@ -197,7 +213,8 @@ def preflight(model,config,folder,watcher):
             check_memory(watcher.report())
             reports.append(dict(phase=phase,step=step,task_counts=torch.bincount(cpu['task_id'],minlength=4).tolist(),
                 loss=diagnostics,gradients=gradients,absent_private_parameter_and_adam_unchanged=True,
-                frozen_unchanged=True,fp32_state=True))
+                frozen_unchanged=True,fp32_state=True,disabled_lora_unchanged=phase=='dense',
+                inactive_lora_adam_empty=phase=='dense',fusion_base_frozen=phase=='adapter'))
             print(f'Preflight {phase} batch {step}/6 passed, loss={float(loss.detach()):.6f}',flush=True)
             del output,loss
         model.zero_grad(set_to_none=True)
@@ -205,7 +222,7 @@ def preflight(model,config,folder,watcher):
     report = dict(passed=True,initial_state_sha256=initial,sampling_sha256=orders,steps=reports,
         phase_transitions=transitions,checkpoint_reload_max_abs_delta=max(deltas.values()),
         checkpoint_reload_by_phase=deltas,complete_blip_text_restored=True,
-        full_shared_base_and_all_task_loras_restored=True,peak_memory=watcher.report(),
+        full_shared_base_lora_and_modulators_restored=True,peak_memory=watcher.report(),
         loss_protocol=config['loss_protocol'])
     write_json(folder / 'report.json',report)
     return initial,orders,report

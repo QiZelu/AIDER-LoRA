@@ -1,4 +1,4 @@
-"""AIDER: cross-branch FiLM, ordinary Transformer and private task LoRAs."""
+"""AIDER: cross-branch FiLM, ordinary Transformer and shared task-conditioned LoRAs."""
 
 import copy
 import math
@@ -20,17 +20,18 @@ from .film import CrossBranchFiLM, video_mlp
 from .fusion import TransformerFusion
 from .registry import validate_task_ids
 from .registry import TASKS, BRANCHES, ATTRIBUTES
-from .task_private import task_linear, privatize_task_modules
+from .task_private import task_linear
 
 
 class TaskEmbedding(nn.Module):
-    """固定原始 CLIP 文本投影；不减均值，也不作 L2 单位化。"""
+    """固定原始 CLIP 文本投影，不去均值、不做 L2 或 Intent Adapter。"""
 
     def __init__(self, task):
         super().__init__()
         self.feature_dim = 768
         self.num_tasks = len(task['order'])
-        for name, value in load_task_table(task).items():
+        values = load_task_table(task)
+        for name, value in values.items():
             self.register_buffer(name, value)
 
     def forward(self, task_ids):
@@ -112,9 +113,6 @@ class AIDER(nn.Module):
         if self.private_heads:
             source_head = self.fusion.heads['shared']
             self.fusion.heads = nn.ModuleDict({task: copy.deepcopy(source_head) for task in self.task_order})
-        self.private_task_modules = 'private_task_modules' in config
-        if self.private_task_modules:
-            privatize_task_modules(self)
         self.configure_trainable_parameters()
         self.task_embedding_hashes = {
             name: digest({name: value})
@@ -124,7 +122,7 @@ class AIDER(nn.Module):
             'seed': seed,
             'trained_checkpoint_loaded': False,
             'retained_snapshot_tensors': retained_count,
-            'construction': 'depth2_dense_transformer_private_task_lora',
+            'construction': 'depth2_shared_film_task_conditioned_shared_lora',
             'pool_count': 0,
             'heads': len(self.task_order) if self.private_heads else 1,
             'cross_branch_summary': ('raw_other_branch_temporal_means_no_summary_mlp'
