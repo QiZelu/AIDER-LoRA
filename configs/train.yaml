@@ -1,0 +1,51 @@
+pretrained_root: ../pretrained_models
+initialization: ../AIDER/artifacts/baseline_seed42_initialization.pt
+initialization_sha256: 80273ff2f6f8d6c5965841bc559c49dd7276bf5832646a7952e4f5ee3cf14947
+output_dir: outputs/full_seed42
+data:
+  train_manifest: ../AIDER/outputs/multitask/ablations/aigvqa_qk_two_stage5_5_generator_stratified_5splits_modelseed42/splits/seed42/train.jsonl
+  val_manifest: ../AIDER/outputs/multitask/ablations/aigvqa_qk_two_stage5_5_generator_stratified_5splits_modelseed42/splits/seed42/test.jsonl
+  video_root: ../My_Datasets/AIGV-DB/MOS/MOS_Videos
+  num_frames: 8
+  min_total_frames: 8
+  vital_size: 448
+  expert_size: 224
+  artifact:
+    cache_dir: ../AIDER/outputs/cache/artifact_prior_v3_g9
+    normalization: percentile
+    percentile_lo: 1.0
+    percentile_hi: 99.0
+    fixed_scale: 0.1
+    gaussian_kernel_size: 9
+    gaussian_sigma: 0.0
+    fb_alpha: 0.05
+    fb_beta: 1.5
+    tex_percentile: 70.0
+    tex_abs_thr: 0.03
+    structure_percentile: 90.0
+    readonly_manifest: ../AIDER/outputs/multitask/runs/aigvqa_db_transformer_task_lora_r8_raw_clip_two_stage5_5_seed42/preparation/prior_manifest.json
+  split_seed: 42
+  use_prior: true
+loader:
+  video_batch_size: 8
+  num_workers: 4
+  pin_memory: true
+  persistent_workers: true
+  drop_last: false
+  sampler_seed: 9042
+training:
+  seed: 42
+  lr: 0.0001
+  module_lrs:
+    text_video_backbone: 1.0e-05
+  weight_decay: 0.05
+  betas:
+  - 0.9
+  - 0.999
+  gradient_clip: null
+  epochs: 10
+  gradient_accumulation: 1
+  loss_kind: smooth_l1
+  smooth_l1_beta: 0.1
+  precision: bfloat16
+  warmup_ratio: 0.05
